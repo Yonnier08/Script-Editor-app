@@ -155,25 +155,25 @@ jobs:
                       if i < len(lines):
                           lines[i] = re.sub(r'\bEdit\b(?<!EditMode)', ns + ".Edit", lines[i])
 
-              # 4. Arreglar los descalces de asignación de tipo 'Module' (Cast explícito vía int)
-              # Error de Diva2nd.Module a EditMode.Module o viceversa
+              # 4. SOLUCIÓN RADICAL PARA ASIGNACIONES COMPORTAMIENTO 'Module' (CS0266)
+              # Forzamos un cast mediante un formateador regex intermedio sobre lo ya procesado
               for i in range(len(lines)):
-                  if "EditMode.Module" in lines[i] or "Module" in lines[i]:
-                      # Forzar casts numéricos seguros donde hay asignaciones conflictivas detectadas en log
-                      lines[i] = lines[i].replace("= EditMode.Diva2nd.Module", "= (EditMode.Module)(int)EditMode.Diva2nd.Module")
-                      lines[i] = lines[i].replace("= EditMode.DivaExtend.Module", "= (EditMode.Module)(int)EditMode.DivaExtend.Module")
-                      lines[i] = lines[i].replace("= EditMode.Module", "= (EditMode.Diva2nd.Module)(int)EditMode.Module" if "Diva2nd" in lines[i] else "= (EditMode.DivaExtend.Module)(int)EditMode.Module")
+                  if "Module" in lines[i] and "=" in lines[i]:
+                      # Si asigna un valor a Module, metemos un doble cast numérico (EnumB)(int)(EnumA) seguro
+                      lines[i] = re.sub(r'=\s*EditMode\.Diva2nd\.Module\b', '= (EditMode.Module)(int)EditMode.Diva2nd.Module', lines[i])
+                      lines[i] = re.sub(r'=\s*EditMode\.DivaExtend\.Module\b', '= (EditMode.Module)(int)EditMode.DivaExtend.Module', lines[i])
+                      lines[i] = re.sub(r'=\s*EditMode\.Module\b', lambda m: '= (EditMode.Diva2nd.Module)(int)EditMode.Module' if 'Diva2nd' in lines[i] else '= (EditMode.DivaExtend.Module)(int)EditMode.Module', lines[i])
 
               with open(path_pv, "w", encoding="utf-8") as f:
                   f.writelines(lines)
               print("-> PvDatabaseInfo.cs corregido quirúrgicamente incluyendo tipos Module.")
 
-          # Convertir enteros / valores dinámicos a enums Opcode usando Regex flexible (acepta comas y espacios)
+          # Convertir enteros / valores dinámicos a enums Opcode usando Regex sin importar delimitadores finales
           path_2nd = "ScriptUtilities/ScriptUtilities/Diva2ndEditScript.cs"
           if os.path.exists(path_2nd):
               with open(path_2nd, "r", encoding="utf-8") as f:
                   content = f.read()
-              content = re.sub(r'\bOpcode\s*=\s*(\d+)\b', r'Opcode = (EditMode.Diva2nd.Opcode)\1', content)
+              content = re.sub(r'\bOpcode\s*=\s*(\d+)', r'Opcode = (EditMode.Diva2nd.Opcode)\1', content)
               with open(path_2nd, "w", encoding="utf-8") as f:
                   f.write(content)
               print("-> Diva2ndEditScript.cs corregido.")
@@ -182,19 +182,19 @@ jobs:
           if os.path.exists(path_ext):
               with open(path_ext, "r", encoding="utf-8") as f:
                   content = f.read()
-              content = re.sub(r'\bOpcode\s*=\s*(\d+)\b', r'Opcode = (EditMode.DivaExtend.Opcode)\1', content)
+              content = re.sub(r'\bOpcode\s*=\s*(\d+)', r'Opcode = (EditMode.DivaExtend.Opcode)\1', content)
               with open(path_ext, "w", encoding="utf-8") as f:
                   f.write(content)
               print("-> DivaExtendEditScript.cs corregido.")
 
-          # Solucionar asignación inválida en EditTime.cs (cualquier dirección de asignación)
+          # Solucionar asignación en EditTime.cs forzando conversión mutua limpia
           path_time = "ScriptUtilities/ScriptUtilities/EditTime.cs"
           if os.path.exists(path_time):
               with open(path_time, "r", encoding="utf-8") as f:
                   content = f.read()
-              # Forzar un cast explícito robusto sin importar el orden
-              content = content.replace("= TimeSig", "= (int)TimeSig")
-              content = re.sub(r'TimeSig\s*=\s*([^,;\s]+)', r'TimeSig = (EditMode.TimeSig)(int)\1', content)
+              content = re.sub(r'=\s*EditMode\.TimeSig', '= (int)EditMode.TimeSig', content)
+              content = re.sub(r'=\s*TimeSig', '= (int)TimeSig', content)
+              content = re.sub(r'\bTimeSig\s*=\s*([^,;\s)]+)', r'TimeSig = (EditMode.TimeSig)(int)\1', content)
               with open(path_time, "w", encoding="utf-8") as f:
                   f.write(content)
               print("-> EditTime.cs corregido.")
@@ -231,5 +231,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ScriptEditor-apk
-          path: ${{ steps.find_apk.outputs.apk_path }}
+          path: ${{ steps.outputs.apk_path || steps.find_apk.outputs.apk_path }}
           
