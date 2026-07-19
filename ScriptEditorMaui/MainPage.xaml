@@ -15,45 +15,52 @@
     <ContentPage Title="Script">
         <Grid RowDefinitions="Auto,Auto,*,Auto" Padding="10" RowSpacing="8">[span_2](start_span)[span_2](end_span)
 
-            <HorizontalStackLayout Grid.Row="0" Spacing="8">[span_3](start_span)[span_3](end_span)
-                <Button Text="Abrir" Command="{Binding OpenFileCommand}" />[span_4](start_span)[span_4](end_span)
-                <Button Text="Guardar" Command="{Binding SaveFileCommand}" />[span_5](start_span)[span_5](end_span)
-                <Label Text="{Binding StatusMessage}" VerticalOptions="Center" LineBreakMode="TailTruncation" />[span_6](start_span)[span_6](end_span)
-            </HorizontalStackLayout>[span_7](start_span)[span_7](end_span)
+            <!-- MENÚS PRINCIPALES ESTILO PC -->
+            <HorizontalStackLayout Grid.Row="0" Spacing="4" BackgroundColor="#2D2D2D" Padding="4">
+                <Button Text="File" Command="{Binding MenuFileCommand}" BackgroundColor="Transparent" TextColor="White" CompactSize="True" />
+                <Button Text="Edit" Command="{Binding MenuEditCommand}" BackgroundColor="Transparent" TextColor="White" CompactSize="True" />
+                <Button Text="Export" Command="{Binding MenuExportCommand}" BackgroundColor="Transparent" TextColor="White" CompactSize="True" />
+                <Button Text="Tools" Command="{Binding MenuToolsCommand}" BackgroundColor="Transparent" TextColor="White" CompactSize="True" />
+                <BoxView WidthRequest="1" BackgroundColor="Gray" Margin="5,0" />
+                <Label Text="{Binding StatusMessage}" VerticalOptions="Center" TextColor="LightGray" LineBreakMode="TailTruncation" FontSize="12" />[span_3](start_span)[span_3](end_span)
+            </HorizontalStackLayout>
 
-            <HorizontalStackLayout Grid.Row="1" Spacing="16">[span_8](start_span)[span_8](end_span)
+            <!-- OPCIONES RÁPIDAS DE CONFIGURACIÓN -->
+            <HorizontalStackLayout Grid.Row="1" Spacing="16">[span_4](start_span)[span_4](end_span)
+                <HorizontalStackLayout Spacing="4">[span_5](start_span)[span_5](end_span)
+                    <CheckBox IsChecked="{Binding IsBigEndian}" />[span_6](start_span)[span_6](end_span)
+                    <Label Text="Big Endian" VerticalOptions="Center" />[span_7](start_span)[span_7](end_span)
+                </HorizontalStackLayout>[span_8](start_span)[span_8](end_span)
                 <HorizontalStackLayout Spacing="4">[span_9](start_span)[span_9](end_span)
-                    <CheckBox IsChecked="{Binding IsBigEndian}" />[span_10](start_span)[span_10](end_span)
-                    <Label Text="Big Endian" VerticalOptions="Center" />[span_11](start_span)[span_11](end_span)
+                    <CheckBox IsChecked="{Binding ToLower}" />[span_10](start_span)[span_10](end_span)
+                    <Label Text="minúsculas" VerticalOptions="Center" />[span_11](start_span)[span_11](end_span)
                 </HorizontalStackLayout>[span_12](start_span)[span_12](end_span)
                 <HorizontalStackLayout Spacing="4">[span_13](start_span)[span_13](end_span)
-                    <CheckBox IsChecked="{Binding ToLower}" />[span_14](start_span)[span_14](end_span)
-                    <Label Text="minúsculas" VerticalOptions="Center" />[span_15](start_span)[span_15](end_span)
+                    <CheckBox IsChecked="{Binding ExcludeStageFilters}" />[span_14](start_span)[span_14](end_span)
+                    <Label Text="Excluir filtros de stage" VerticalOptions="Center" />[span_15](start_span)[span_15](end_span)
                 </HorizontalStackLayout>[span_16](start_span)[span_16](end_span)
-                <HorizontalStackLayout Spacing="4">[span_17](start_span)[span_17](end_span)
-                    <CheckBox IsChecked="{Binding ExcludeStageFilters}" />[span_18](start_span)[span_18](end_span)
-                    <Label Text="Excluir filtros de stage" VerticalOptions="Center" />[span_19](start_span)[span_19](end_span)
-                </HorizontalStackLayout>[span_20](start_span)[span_20](end_span)
-            </HorizontalStackLayout>[span_21](start_span)[span_21](end_span)
+            </HorizontalStackLayout>[span_17](start_span)[span_17](end_span)
 
+            <!-- EDITOR CENTRAL -->
             <Editor Grid.Row="2"
                     Text="{Binding EditorText}"
                     AutoSize="TextChanges"
                     FontFamily="Courier"
-                    Placeholder="Comandos DSC..." />[span_22](start_span)[span_22](end_span)
+                    Placeholder="Comandos DSC..." />[span_18](start_span)[span_18](end_span)
 
-            <ScrollView Grid.Row="3" Orientation="Horizontal">[span_23](start_span)[span_23](end_span)
-                <HorizontalStackLayout Spacing="6">[span_24](start_span)[span_24](end_span)
-                    <Button Text="Add Target Flying Time" Command="{Binding AddTargetFlyingTimeCommandsCommand}" />[span_25](start_span)[span_25](end_span)
-                    <Button Text="F2 → FT" Command="{Binding AutoFormatF2ToFtCommand}" />[span_26](start_span)[span_26](end_span)
-                    <Button Text="FT → F2" Command="{Binding AutoFormatFtToF2Command}" />[span_27](start_span)[span_27](end_span)
-                    <Button Text="FT → F2 (Vita)" Command="{Binding AutoFormatFtToF2VitaCommand}" />[span_28](start_span)[span_28](end_span)
-                    <Button Text="Quitar chart" Command="{Binding RemoveChartCommand}" />[span_29](start_span)[span_29](end_span)
-                    <Button Text="Reformat F Targets" Command="{Binding ReformatFTargetsCommand}" />[span_30](start_span)[span_30](end_span)
-                    <Button Text="Reformat FT Targets" Command="{Binding ReformatFtTargetsCommand}" />[span_31](start_span)[span_31](end_span)
-                    <Button Text="Quitar TIME sin uso" Command="{Binding RemoveUnusedTimeCommandsCommand}" />[span_32](start_span)[span_32](end_span)
-                </HorizontalStackLayout>[span_33](start_span)[span_33](end_span)
-            </ScrollView>[span_34](start_span)[span_34](end_span)
+            <!-- ACCIONES RÁPIDAS INFERIORES -->
+            <ScrollView Grid.Row="3" Orientation="Horizontal">[span_19](start_span)[span_19](end_span)
+                <HorizontalStackLayout Spacing="6">[span_20](start_span)[span_20](end_span)
+                    <Button Text="Add Target Flying Time" Command="{Binding AddTargetFlyingTimeCommandsCommand}" />[span_21](start_span)[span_21](end_span)
+                    <Button Text="F2 → FT" Command="{Binding AutoFormatF2ToFtCommand}" />[span_22](start_span)[span_22](end_span)
+                    <Button Text="FT → F2" Command="{Binding AutoFormatFtToF2Command}" />[span_23](start_span)[span_23](end_span)
+                    <Button Text="FT → F2 (Vita)" Command="{Binding AutoFormatFtToF2VitaCommand}" />[span_24](start_span)[span_24](end_span)
+                    <Button Text="Quitar chart" Command="{Binding RemoveChartCommand}" />[span_25](start_span)[span_25](end_span)
+                    <Button Text="Reformat F Targets" Command="{Binding ReformatFTargetsCommand}" />[span_26](start_span)[span_26](end_span)
+                    <Button Text="Reformat FT Targets" Command="{Binding ReformatFtTargetsCommand}" />[span_27](start_span)[span_27](end_span)
+                    <Button Text="Quitar TIME sin uso" Command="{Binding RemoveUnusedTimeCommandsCommand}" />[span_28](start_span)[span_28](end_span)
+                </HorizontalStackLayout>[span_29](start_span)[span_29](end_span)
+            </ScrollView>[span_30](start_span)[span_30](end_span)
 
         </Grid>
     </ContentPage>
