@@ -20,6 +20,8 @@ jobs:
           unzip -o EditMode.dll_Decompiler.com.zip -d EditMode
           unzip -o ScriptUtilities.dll_Decompiler.com.zip -d ScriptUtilities
 
+          rm -f DivaScript/Properties/AssemblyInfo.cs EditMode/Properties/AssemblyInfo.cs ScriptUtilities/Properties/AssemblyInfo.cs
+
           # Restaurar los .csproj retargeteados a net8.0 (los ZIPs traen net47)
           cat > DivaScript/DivaScript.csproj << 'EOF'
           <Project Sdk="Microsoft.NET.Sdk">
