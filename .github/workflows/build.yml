@@ -67,6 +67,11 @@ jobs:
               <ProjectReference Include="../DivaScript/DivaScript.csproj" />
               <ProjectReference Include="../EditMode/EditMode.csproj" />
             </ItemGroup>
+            <!-- Esto inyecta un alias global automático para resolver la ambigüedad de la clase 'Edit' sin romper el código -->
+            <ItemGroup>
+              <Using Alias="Diva2ndEdit" Include="EditMode.Diva2nd.Edit" />
+              <Using Alias="DivaExtendEdit" Include="EditMode.DivaExtend.Edit" />
+            </ItemGroup>
           </Project>
           EOF
 
@@ -79,57 +84,7 @@ jobs:
           import re
           import os
 
-          # 1. PARCHEAR AMBIGÜEDADES Y ERRORES EN PvDatabaseInfo.cs
-          path_pv = "ScriptUtilities/ScriptUtilities/PvDatabaseInfo.cs"
-          if os.path.exists(path_pv):
-              with open(path_pv, "r", encoding="utf-8") as f:
-                  content = f.read()
-
-              # Eliminar duplicados exactos generados por la descompilación corrupta (CS0111)
-              lines = content.splitlines()
-              unique_lines = []
-              seen_constructors = False
-              
-              for line in lines:
-                  if "public PvDatabaseInfo" in line:
-                      if seen_constructors:
-                          continue # Omitir la definición duplicada que rompe la compilación
-                      seen_constructors = True
-                  unique_lines.append(line)
-
-              # Resolver colisiones generales de namespaces primero
-              content_temp = "\n".join(unique_lines)
-              content_temp = re.sub(r'\bStage\b(?!\s*=)', 'EditMode.Stage', content_temp)
-              content_temp = re.sub(r'\bEffect\b(?!\s*=)', 'EditMode.Effect', content_temp)
-              content_temp = re.sub(r'\bHandItem\b(?!\s*=)', 'EditMode.HandItem', content_temp)
-              content_temp = re.sub(r'\bMotion\b(?!\s*=)', 'EditMode.Motion', content_temp)
-              
-              processed_lines = content_temp.splitlines()
-              for i in range(len(processed_lines)):
-                  line = processed_lines[i]
-                  
-                  # Resolver ambigüedad de 'Edit' (CS0104) expandiendo a su namespace absoluto
-                  if "Edit " in line or "Edit." in line or "= Edit" in line:
-                      if "Diva2nd" in line or (i > 0 and "Diva2nd" in processed_lines[i-1]):
-                          processed_lines[i] = re.sub(r'\bEdit\b', 'EditMode.Diva2nd.Edit', processed_lines[i])
-                      elif "DivaExtend" in line or (i > 0 and "DivaExtend" in processed_lines[i-1]):
-                          processed_lines[i] = re.sub(r'\bEdit\b', 'EditMode.DivaExtend.Edit', processed_lines[i])
-                  
-                  # Forzar un cast intermedio numérico limpio en asignaciones cruzadas de Module
-                  if "Module =" in processed_lines[i]:
-                      left, right = processed_lines[i].split("=", 1)
-                      right_clean = right.strip().rstrip(";, ")
-                      if "Diva2nd" in left:
-                          processed_lines[i] = f"{left}= (EditMode.Diva2nd.Module)(int)({right_clean});"
-                      elif "DivaExtend" in left:
-                          processed_lines[i] = f"{left}= (EditMode.DivaExtend.Module)(int)({right_clean});"
-                      else:
-                          processed_lines[i] = f"{left}= (EditMode.Module)(int)({right_clean});"
-
-              with open(path_pv, "w", encoding="utf-8") as f:
-                  f.write("\n".join(processed_lines) + "\n")
-
-          # 2. PARCHEAR OPCODES EN LOS SCRIPTS EDIT
+          # 1. PARCHEAR OPCODES EN LOS SCRIPTS EDIT
           def fix_opcode_file(file_path, target_enum):
               if os.path.exists(file_path):
                   with open(file_path, "r", encoding="utf-8") as f:
@@ -145,7 +100,7 @@ jobs:
           fix_opcode_file("ScriptUtilities/ScriptUtilities/Diva2ndEditScript.cs", "EditMode.Diva2nd.Opcode")
           fix_opcode_file("ScriptUtilities/ScriptUtilities/DivaExtendEditScript.cs", "EditMode.DivaExtend.Opcode")
 
-          # 3. SOLUCIÓN PARA COERCIONES IMPOSIBLES EN EditTime.cs
+          # 2. SOLUCIÓN PARA COERCIONES IMPOSIBLES EN EditTime.cs
           path_time = "ScriptUtilities/ScriptUtilities/EditTime.cs"
           if os.path.exists(path_time):
               with open(path_time, "r", encoding="utf-8") as f:
@@ -163,7 +118,7 @@ jobs:
 
               with open(path_time, "w", encoding="utf-8") as f:
                   f.writelines(lines)
-              print("-> Parches de ambigüedad, duplicados y enums inyectados con éxito.")
+              print("-> Parches de opcodes y enums aplicados limpiamente.")
 
       - name: Setup .NET 8
         uses: actions/setup-dotnet@v4
@@ -198,3 +153,4 @@ jobs:
         with:
           name: ScriptEditor-apk
           path: ${{ steps.outputs.apk_path || steps.find_apk.outputs.apk_path }}
+          
