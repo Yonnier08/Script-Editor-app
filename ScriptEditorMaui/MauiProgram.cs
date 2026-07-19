@@ -16,6 +16,10 @@ public static class MauiProgram
 				fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
 			});
 
+		// REGISTRO DE VISTAS Y VIEWMODELS (Añade estas dos líneas)
+		builder.Services.AddSingleton<MainPage>();
+		builder.Services.AddSingleton<MainViewModel>();
+
 #if DEBUG
 		builder.Logging.AddDebug();
 #endif
