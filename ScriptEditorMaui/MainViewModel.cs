@@ -37,9 +37,38 @@ public partial class MainViewModel : ObservableObject
 	private List<PvCommand> EditorCommands
 	{
 		get => PvScript.ParseCommandStrings(new[] { EditorText });
-		set => EditorText = ToLower
-			? PvScript.CommandsToString(value).ToLower()
-			: PvScript.CommandsToString(value);
+		set 
+		{
+			EditorText = ToLower
+				? PvScript.CommandsToString(value).ToLower()
+				: PvScript.CommandsToString(value);
+				
+			// Cada vez que el script cambie, intentamos actualizar las bases de datos de Edit
+			ActualizarBasesDeDatos(value);
+		}
+	}
+
+	private void ActualizarBasesDeDatos(List<PvCommand> comandos)
+	{
+		try
+		{
+			// Simulamos o cargamos el Edit usando la lista de comandos actual
+			// Nota: Si tu librería requiere un archivo físico SECURE.BIN completo, 
+			// pasarle los comandos parseados o el objeto 'Edit' correspondiente.
+			Edit miEdit = new Edit(comandos); 
+			PvDatabaseInfo pvInfo = new PvDatabaseInfo(miEdit, _pvId);
+
+			// Rellenamos las propiedades que van enlazadas a las nuevas pestañas
+			PvDbText = string.Join(Environment.NewLine, pvInfo.GetFtPvDb());
+			FieldDbText = string.Join(Environment.NewLine, pvInfo.GetFtFieldDb());
+		}
+		catch
+		{
+			// Si el archivo abierto no es un Edit o no tiene formato compatible,
+			// dejamos las pestañas limpias sin romper la app.
+			PvDbText = "# No se pudieron generar datos de PV-Database para este archivo.";
+			FieldDbText = "# No se pudieron generar datos de Field-Database para este archivo.";
+		}
 	}
 
 	[RelayCommand]
