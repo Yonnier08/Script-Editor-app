@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:ScriptEditorMaui"
+             x:Class="ScriptEditorMaui.MainPage"
+             Title="ScriptEditor">
+
+    <ContentPage.BindingContext>
+        <local:MainViewModel />
+    </ContentPage.BindingContext>
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto" Padding="10" RowSpacing="8">
+
+        <HorizontalStackLayout Grid.Row="0" Spacing="8">
+            <Button Text="Abrir" Command="{Binding OpenFileCommand}" />
+            <Button Text="Guardar" Command="{Binding SaveFileCommand}" />
+            <Label Text="{Binding StatusMessage}" VerticalOptions="Center" LineBreakMode="TailTruncation" />
+        </HorizontalStackLayout>
+
+        <HorizontalStackLayout Grid.Row="1" Spacing="16">
+            <HorizontalStackLayout Spacing="4">
+                <CheckBox IsChecked="{Binding IsBigEndian}" />
+                <Label Text="Big Endian" VerticalOptions="Center" />
+            </HorizontalStackLayout>
+            <HorizontalStackLayout Spacing="4">
+                <CheckBox IsChecked="{Binding ToLower}" />
+                <Label Text="minúsculas" VerticalOptions="Center" />
+            </HorizontalStackLayout>
+            <HorizontalStackLayout Spacing="4">
+                <CheckBox IsChecked="{Binding ExcludeStageFilters}" />
+                <Label Text="Excluir filtros de stage" VerticalOptions="Center" />
+            </HorizontalStackLayout>
+        </HorizontalStackLayout>
+
+        <Editor Grid.Row="2"
+                Text="{Binding EditorText}"
+                AutoSize="TextChanges"
+                FontFamily="Courier"
+                Placeholder="Comandos DSC..." />
+
+        <ScrollView Grid.Row="3" Orientation="Horizontal">
+            <HorizontalStackLayout Spacing="6">
+                <Button Text="Add Target Flying Time" Command="{Binding AddTargetFlyingTimeCommandsCommand}" />
+                <Button Text="F2 → FT" Command="{Binding AutoFormatF2ToFtCommand}" />
+                <Button Text="FT → F2" Command="{Binding AutoFormatFtToF2Command}" />
+                <Button Text="FT → F2 (Vita)" Command="{Binding AutoFormatFtToF2VitaCommand}" />
+                <Button Text="Quitar chart" Command="{Binding RemoveChartCommand}" />
+                <Button Text="Reformat F Targets" Command="{Binding ReformatFTargetsCommand}" />
+                <Button Text="Reformat FT Targets" Command="{Binding ReformatFtTargetsCommand}" />
+                <Button Text="Quitar TIME sin uso" Command="{Binding RemoveUnusedTimeCommandsCommand}" />
+            </HorizontalStackLayout>
+        </ScrollView>
+
+    </Grid>
+</ContentPage>
