@@ -1,9 +1,15 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-<Application xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="ScriptEditorMaui.App">
-    <Application.Resources>
-        <ResourceDictionary>
-        </ResourceDictionary>
-    </Application.Resources>
-</Application>
+using ScriptUtilities;
+
+namespace ScriptEditorMaui;
+
+public partial class App : Application
+{
+	public App()
+	{
+		InitializeComponent();
+
+		Settings.UserSettings = Settings.TryLoadSettings();
+
+		MainPage = new AppShell();
+	}
+}
