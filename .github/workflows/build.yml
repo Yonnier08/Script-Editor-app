@@ -79,12 +79,12 @@ jobs:
           import re
           import os
 
-          # 1. Corregir ambigüedades en PvDatabaseInfo.cs usando la ruta anidada real detectada
           path_pv = "ScriptUtilities/ScriptUtilities/PvDatabaseInfo.cs"
           if os.path.exists(path_pv):
               with open(path_pv, "r", encoding="utf-8") as f:
                   lines = f.readlines()
 
+              # 1. Resolver tokens estándar (Stage, Effect, etc.) por regiones
               regions = [
                   (93, 108, "base"),
                   (111, 153, "Diva2nd"),
@@ -112,15 +112,12 @@ jobs:
 
               def qualify_line(line, flavor):
                   ns = ns_map[flavor]
-                  # Evitar romper declaraciones de clases / constructores repetidos
                   if "class PvDatabaseInfo" in line or "public PvDatabaseInfo" in line:
                       return line
                   for tok in tokens:
                       line = re.sub(r'(?<!\.)\b' + tok + r'\b', ns + "." + tok, line)
                   line = re.sub(r'\(SeName\)', '(' + ns + '.SeName)', line)
                   line = re.sub(r'(?<!\.)\bSeName\b(\s+buttonSound)', ns + '.SeName' + r'\1', line)
-                  # Parche específico para evitar la ambigüedad con el tipo Edit
-                  line = re.sub(r'(?<!\.)\bEdit\b', ns + ".Edit", line)
                   return line
 
               for start, end, flavor in regions:
@@ -128,6 +125,7 @@ jobs:
                       if i < len(lines):
                           lines[i] = qualify_line(lines[i], flavor)
 
+              # 2. Corregir listas de propiedades iniciales
               ns_map2 = {"Diva2nd": "EditMode.Diva2nd", "DivaExtend": "EditMode.DivaExtend", "base": "EditMode"}
               prop_tokens = ["Stage", "Effect", "HandItem", "Motion"]
               pattern = re.compile(r'public List<(\w+)> (\w+) \{ get; set; \} = new List<(\w+)>\(\);')
@@ -143,7 +141,6 @@ jobs:
                           tok = m.group(1)
                           lines[i] = line.replace(f"List<{tok}>", f"List<{ns}.{tok}>")
 
-              # Forzar la especificación limpia en las primeras líneas de propiedades
               for i in range(43, 92):
                   if i < len(lines):
                       lines[i] = lines[i].replace("public Stage Stage", "public EditMode.Stage Stage")
@@ -151,11 +148,20 @@ jobs:
                       lines[i] = lines[i].replace("public HandItem HandItem", "public EditMode.HandItem HandItem")
                       lines[i] = lines[i].replace("public Motion Motion", "public EditMode.Motion Motion")
 
+              # 3. ATAQUE QUIRÚRGICO AL TIPO AMBIGUO 'Edit':
+              # Buscamos específicamente palabras 'Edit' aisladas que causan los errores CS0104.
+              for start, end, flavor in regions:
+                  ns = ns_map[flavor]
+                  for i in range(start - 1, end):
+                      if i < len(lines):
+                          # Reemplaza 'Edit ' o 'Edit>' o '(Edit)' asegurando que no sea parte de 'EditMode'
+                          lines[i] = re.sub(r'\bEdit\b(?<!EditMode)', ns + ".Edit", lines[i])
+
               with open(path_pv, "w", encoding="utf-8") as f:
                   f.writelines(lines)
-              print("-> PvDatabaseInfo.cs corregido exitosamente en la ruta real.")
+              print("-> PvDatabaseInfo.cs corregido quirúrgicamente incluyendo el tipo Edit.")
 
-          # 2. Convertir enteros explícitos a enums Opcode en Diva2ndEditScript y DivaExtendEditScript
+          # Convertir enteros explícitos a enums Opcode en Diva2ndEditScript y DivaExtendEditScript
           path_2nd = "ScriptUtilities/ScriptUtilities/Diva2ndEditScript.cs"
           if os.path.exists(path_2nd):
               with open(path_2nd, "r", encoding="utf-8") as f:
@@ -174,7 +180,7 @@ jobs:
                   f.write(content)
               print("-> DivaExtendEditScript.cs corregido.")
 
-          # 3. Solucionar asignación inválida en EditTime.cs
+          # Solucionar asignación inválida en EditTime.cs
           path_time = "ScriptUtilities/ScriptUtilities/EditTime.cs"
           if os.path.exists(path_time):
               with open(path_time, "r", encoding="utf-8") as f:
