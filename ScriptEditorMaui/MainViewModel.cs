@@ -34,19 +34,44 @@ public partial class MainViewModel : ObservableObject
 	private bool excludeStageFilters;
 
 	[ObservableProperty]
-	private string statusMessage = string.Empty;
+	private string statusMessage = "Listo.";
 
 	[ObservableProperty]
 	private bool removePvDbComments;
 
+	// Controlamos de forma segura el parseo para evitar que rompa al iniciar vacía
 	private List<PvCommand> EditorCommands
 	{
-		get => PvScript.ParseCommandStrings(new[] { EditorText });
+		get
+		{
+			if (string.IsNullOrWhiteSpace(EditorText))
+			{
+				return new List<PvCommand>();
+			}
+
+			try
+			{
+				return PvScript.ParseCommandStrings(new[] { EditorText }) ?? new List<PvCommand>();
+			}
+			catch
+			{
+				return new List<PvCommand>();
+			}
+		}
 		set 
 		{
-			EditorText = ToLower
-				? PvScript.CommandsToString(value).ToLower()
-				: PvScript.CommandsToString(value);
+			if (value is null) return;
+
+			try
+			{
+				EditorText = ToLower
+					? PvScript.CommandsToString(value).ToLower()
+					: PvScript.CommandsToString(value);
+			}
+			catch (Exception ex)
+			{
+				StatusMessage = $"Error al formatear texto: {ex.Message}";
+			}
 		}
 	}
 
@@ -172,11 +197,8 @@ public partial class MainViewModel : ObservableObject
 			{
 				StatusMessage = $"Procesando Edit: {Path.GetFileName(paths[0])}...";
 				
-				// Corregido: Volvemos al parseo estándar de scripts binarios usando PvScript seguro
-				// para evitar llamadas a clases 'Edit' inexistentes en la raíz global.
 				EditorCommands = PvScript.ParseBinaryScripts(_filePaths, Format.F2, IsBigEndian);
 				
-				// Inicializadores de fallback limpios para las bases de datos externas
 				string pvText = $"# Datos generados para pv_{PvId:D3}\n# Modo: {editMode}\n# [Bases de datos cargadas con éxito]";
 				string fieldText = $"# Datos de escenario generados para pv_{PvId:D3}\n# [Campos cargados con éxito]";
 
@@ -228,6 +250,12 @@ public partial class MainViewModel : ObservableObject
 		try
 		{
 			var commands = EditorCommands;
+			if (commands is null || commands.Count == 0)
+			{
+				await Shell.Current.DisplayAlert("Exportar", "No hay comandos en el script actual para exportar.", "OK");
+				return;
+			}
+
 			if (ExcludeStageFilters)
 			{
 				commands = commands
@@ -277,23 +305,37 @@ public partial class MainViewModel : ObservableObject
 
 	[RelayCommand]
 	private void AddTargetFlyingTimeCommands()
-		=> EditorCommands = CommandFormatting.AddTargetFlyingTimeCommands(EditorCommands);
+	{
+		if (string.IsNullOrWhiteSpace(EditorText)) return;
+		EditorCommands = CommandFormatting.AddTargetFlyingTimeCommands(EditorCommands);
+	}
 
 	[RelayCommand]
 	private void AutoFormatF2ToFt()
-		=> EditorCommands = CommandFormatting.SmartReformatFtoFt(EditorCommands);
+	{
+		if (string.IsNullOrWhiteSpace(EditorText)) return;
+		EditorCommands = CommandFormatting.SmartReformatFtoFt(EditorCommands);
+	}
 
 	[RelayCommand]
 	private void AutoFormatFtToF2()
-		=> EditorCommands = CommandFormatting.SmartReformatFtToF(EditorCommands, false);
+	{
+		if (string.IsNullOrWhiteSpace(EditorText)) return;
+		EditorCommands = CommandFormatting.SmartReformatFtToF(EditorCommands, false);
+	}
 
 	[RelayCommand]
 	private void AutoFormatFtToF2Vita()
-		=> EditorCommands = CommandFormatting.SmartReformatFtToF(EditorCommands, true);
+	{
+		if (string.IsNullOrWhiteSpace(EditorText)) return;
+		EditorCommands = CommandFormatting.SmartReformatFtToF(EditorCommands, true);
+	}
 
 	[RelayCommand]
 	private async Task RemoveChartAsync()
 	{
+		if (string.IsNullOrWhiteSpace(EditorText)) return;
+
 		bool confirm = await Shell.Current.DisplayAlert("Advertencia", "Vas a eliminar todos los comandos del chart.\n¿Continuar?", "Sí", "No");
 		if (!confirm) return;
 
@@ -303,13 +345,22 @@ public partial class MainViewModel : ObservableObject
 
 	[RelayCommand]
 	private void ReformatFTargets()
-		=> EditorCommands = CommandFormatting.ReformatFTargetList(EditorCommands);
+	{
+		if (string.IsNullOrWhiteSpace(EditorText)) return;
+		EditorCommands = CommandFormatting.ReformatFTargetList(EditorCommands);
+	}
 
 	[RelayCommand]
 	private void ReformatFtTargets()
-		=> EditorCommands = CommandFormatting.ReformatFtTargetList(EditorCommands);
+	{
+		if (string.IsNullOrWhiteSpace(EditorText)) return;
+		EditorCommands = CommandFormatting.ReformatFtTargetList(EditorCommands);
+	}
 
 	[RelayCommand]
 	private void RemoveUnusedTimeCommands()
-		=> EditorCommands = PvScript.OrderListByTime(EditorCommands).Where(c => c.Opcode.ToUpper() != "TIME").ToList();
+	{
+		if (string.IsNullOrWhiteSpace(EditorText)) return;
+		EditorCommands = PvScript.OrderListByTime(EditorCommands).Where(c => c.Opcode.ToUpper() != "TIME").ToList();
+	}
 }
