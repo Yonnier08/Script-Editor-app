@@ -148,25 +148,32 @@ jobs:
                       lines[i] = lines[i].replace("public HandItem HandItem", "public EditMode.HandItem HandItem")
                       lines[i] = lines[i].replace("public Motion Motion", "public EditMode.Motion Motion")
 
-              # 3. ATAQUE QUIRÚRGICO AL TIPO AMBIGUO 'Edit':
-              # Buscamos específicamente palabras 'Edit' aisladas que causan los errores CS0104.
+              # 3. Ataque quirúrgico al tipo ambiguo 'Edit'
               for start, end, flavor in regions:
                   ns = ns_map[flavor]
                   for i in range(start - 1, end):
                       if i < len(lines):
-                          # Reemplaza 'Edit ' o 'Edit>' o '(Edit)' asegurando que no sea parte de 'EditMode'
                           lines[i] = re.sub(r'\bEdit\b(?<!EditMode)', ns + ".Edit", lines[i])
+
+              # 4. Arreglar los descalces de asignación de tipo 'Module' (Cast explícito vía int)
+              # Error de Diva2nd.Module a EditMode.Module o viceversa
+              for i in range(len(lines)):
+                  if "EditMode.Module" in lines[i] or "Module" in lines[i]:
+                      # Forzar casts numéricos seguros donde hay asignaciones conflictivas detectadas en log
+                      lines[i] = lines[i].replace("= EditMode.Diva2nd.Module", "= (EditMode.Module)(int)EditMode.Diva2nd.Module")
+                      lines[i] = lines[i].replace("= EditMode.DivaExtend.Module", "= (EditMode.Module)(int)EditMode.DivaExtend.Module")
+                      lines[i] = lines[i].replace("= EditMode.Module", "= (EditMode.Diva2nd.Module)(int)EditMode.Module" if "Diva2nd" in lines[i] else "= (EditMode.DivaExtend.Module)(int)EditMode.Module")
 
               with open(path_pv, "w", encoding="utf-8") as f:
                   f.writelines(lines)
-              print("-> PvDatabaseInfo.cs corregido quirúrgicamente incluyendo el tipo Edit.")
+              print("-> PvDatabaseInfo.cs corregido quirúrgicamente incluyendo tipos Module.")
 
-          # Convertir enteros explícitos a enums Opcode en Diva2ndEditScript y DivaExtendEditScript
+          # Convertir enteros / valores dinámicos a enums Opcode usando Regex flexible (acepta comas y espacios)
           path_2nd = "ScriptUtilities/ScriptUtilities/Diva2ndEditScript.cs"
           if os.path.exists(path_2nd):
               with open(path_2nd, "r", encoding="utf-8") as f:
                   content = f.read()
-              content = re.sub(r'Opcode\s*=\s*(\d+);', r'Opcode = (EditMode.Diva2nd.Opcode)\1;', content)
+              content = re.sub(r'\bOpcode\s*=\s*(\d+)\b', r'Opcode = (EditMode.Diva2nd.Opcode)\1', content)
               with open(path_2nd, "w", encoding="utf-8") as f:
                   f.write(content)
               print("-> Diva2ndEditScript.cs corregido.")
@@ -175,17 +182,19 @@ jobs:
           if os.path.exists(path_ext):
               with open(path_ext, "r", encoding="utf-8") as f:
                   content = f.read()
-              content = re.sub(r'Opcode\s*=\s*(\d+);', r'Opcode = (EditMode.DivaExtend.Opcode)\1;', content)
+              content = re.sub(r'\bOpcode\s*=\s*(\d+)\b', r'Opcode = (EditMode.DivaExtend.Opcode)\1', content)
               with open(path_ext, "w", encoding="utf-8") as f:
                   f.write(content)
               print("-> DivaExtendEditScript.cs corregido.")
 
-          # Solucionar asignación inválida en EditTime.cs
+          # Solucionar asignación inválida en EditTime.cs (cualquier dirección de asignación)
           path_time = "ScriptUtilities/ScriptUtilities/EditTime.cs"
           if os.path.exists(path_time):
               with open(path_time, "r", encoding="utf-8") as f:
                   content = f.read()
+              # Forzar un cast explícito robusto sin importar el orden
               content = content.replace("= TimeSig", "= (int)TimeSig")
+              content = re.sub(r'TimeSig\s*=\s*([^,;\s]+)', r'TimeSig = (EditMode.TimeSig)(int)\1', content)
               with open(path_time, "w", encoding="utf-8") as f:
                   f.write(content)
               print("-> EditTime.cs corregido.")
