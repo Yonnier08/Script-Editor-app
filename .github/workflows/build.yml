@@ -79,8 +79,8 @@ jobs:
           import re
           import os
 
-          # 1. Corregir ambigüedades y casts en PvDatabaseInfo.cs
-          path_pv = "ScriptUtilities/PvDatabaseInfo.cs"
+          # 1. Corregir ambigüedades en PvDatabaseInfo.cs usando la ruta anidada real detectada
+          path_pv = "ScriptUtilities/ScriptUtilities/PvDatabaseInfo.cs"
           if os.path.exists(path_pv):
               with open(path_pv, "r", encoding="utf-8") as f:
                   lines = f.readlines()
@@ -108,14 +108,19 @@ jobs:
                   "DivaExtend": "EditMode.DivaExtend",
               }
 
-              tokens = ["Edit", "Stage", "Effect", "HandItem", "Motion", "Module", "StageBack"]
+              tokens = ["Stage", "Effect", "HandItem", "Motion", "Module", "StageBack"]
 
               def qualify_line(line, flavor):
                   ns = ns_map[flavor]
+                  # Evitar romper declaraciones de clases / constructores repetidos
+                  if "class PvDatabaseInfo" in line or "public PvDatabaseInfo" in line:
+                      return line
                   for tok in tokens:
                       line = re.sub(r'(?<!\.)\b' + tok + r'\b', ns + "." + tok, line)
                   line = re.sub(r'\(SeName\)', '(' + ns + '.SeName)', line)
                   line = re.sub(r'(?<!\.)\bSeName\b(\s+buttonSound)', ns + '.SeName' + r'\1', line)
+                  # Parche específico para evitar la ambigüedad con el tipo Edit
+                  line = re.sub(r'(?<!\.)\bEdit\b', ns + ".Edit", line)
                   return line
 
               for start, end, flavor in regions:
@@ -138,19 +143,20 @@ jobs:
                           tok = m.group(1)
                           lines[i] = line.replace(f"List<{tok}>", f"List<{ns}.{tok}>")
 
-              # Forzar la corrección de propiedades individuales ambiguas detectadas al inicio
-              for i in range(43, 65):
+              # Forzar la especificación limpia en las primeras líneas de propiedades
+              for i in range(43, 92):
                   if i < len(lines):
                       lines[i] = lines[i].replace("public Stage Stage", "public EditMode.Stage Stage")
                       lines[i] = lines[i].replace("public Effect Effect", "public EditMode.Effect Effect")
                       lines[i] = lines[i].replace("public HandItem HandItem", "public EditMode.HandItem HandItem")
+                      lines[i] = lines[i].replace("public Motion Motion", "public EditMode.Motion Motion")
 
               with open(path_pv, "w", encoding="utf-8") as f:
                   f.writelines(lines)
-              print("-> PvDatabaseInfo.cs corregido.")
+              print("-> PvDatabaseInfo.cs corregido exitosamente en la ruta real.")
 
           # 2. Convertir enteros explícitos a enums Opcode en Diva2ndEditScript y DivaExtendEditScript
-          path_2nd = "ScriptUtilities/Diva2ndEditScript.cs"
+          path_2nd = "ScriptUtilities/ScriptUtilities/Diva2ndEditScript.cs"
           if os.path.exists(path_2nd):
               with open(path_2nd, "r", encoding="utf-8") as f:
                   content = f.read()
@@ -159,7 +165,7 @@ jobs:
                   f.write(content)
               print("-> Diva2ndEditScript.cs corregido.")
 
-          path_ext = "ScriptUtilities/DivaExtendEditScript.cs"
+          path_ext = "ScriptUtilities/ScriptUtilities/DivaExtendEditScript.cs"
           if os.path.exists(path_ext):
               with open(path_ext, "r", encoding="utf-8") as f:
                   content = f.read()
@@ -168,8 +174,8 @@ jobs:
                   f.write(content)
               print("-> DivaExtendEditScript.cs corregido.")
 
-          # 3. Solucionar asignación inválida en EditTime.cs (Firma de tiempo a int)
-          path_time = "ScriptUtilities/EditTime.cs"
+          # 3. Solucionar asignación inválida en EditTime.cs
+          path_time = "ScriptUtilities/ScriptUtilities/EditTime.cs"
           if os.path.exists(path_time):
               with open(path_time, "r", encoding="utf-8") as f:
                   content = f.read()
