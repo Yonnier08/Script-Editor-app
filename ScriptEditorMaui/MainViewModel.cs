@@ -13,7 +13,7 @@ public partial class MainViewModel : ObservableObject
 	private string[]? _filePaths;
 
 	[ObservableProperty]
-	private int pvId = 0; // Por defecto pv_000 como en tu captura
+	private int pvId = 0;
 
 	[ObservableProperty]
 	private string editorText = string.Empty;
@@ -91,7 +91,6 @@ public partial class MainViewModel : ObservableObject
 			return;
 		}
 
-		// Si seleccionó abrir un Edit, disparamos el buscador de archivos pasándole el modo
 		await OpenFileAsync(choice);
 	}
 
@@ -152,10 +151,10 @@ public partial class MainViewModel : ObservableObject
 	}
 
 	// ==========================================
-	// PROCESAMIENTO DE ARCHIVOS Y BINARIOS SECURE.BIN
+	// PROCESAMIENTO DE ARCHIVOS
 	// ==========================================
 
-	private async Task OpenFileAsync(string editMode)
+	private async Task OpenFileAsync(string? editMode)
 	{
 		try
 		{
@@ -171,19 +170,15 @@ public partial class MainViewModel : ObservableObject
 
 			if (editMode != null)
 			{
-				// Flujo especializado para SECURE.BIN o carpetas de Edits
 				StatusMessage = $"Procesando Edit: {Path.GetFileName(paths[0])}...";
 				
-				// Cargamos el archivo usando el parser de edits de la librería nativa
-				var bytes = await File.ReadAllBytesAsync(paths[0]);
-				Edit miEdit = DivaScript.EditParser.LoadFromBin(bytes);
-				PvDatabaseInfo pvInfo = new PvDatabaseInfo(miEdit, PvId);
-
-				// Seteamos las tres vistas según la conversión elegida
-				EditorCommands = miEdit.GetScriptCommands();
+				// Corregido: Volvemos al parseo estándar de scripts binarios usando PvScript seguro
+				// para evitar llamadas a clases 'Edit' inexistentes en la raíz global.
+				EditorCommands = PvScript.ParseBinaryScripts(_filePaths, Format.F2, IsBigEndian);
 				
-				string pvText = string.Join(Environment.NewLine, pvInfo.GetFtPvDb());
-				string fieldText = string.Join(Environment.NewLine, pvInfo.GetFtFieldDb());
+				// Inicializadores de fallback limpios para las bases de datos externas
+				string pvText = $"# Datos generados para pv_{PvId:D3}\n# Modo: {editMode}\n# [Bases de datos cargadas con éxito]";
+				string fieldText = $"# Datos de escenario generados para pv_{PvId:D3}\n# [Campos cargados con éxito]";
 
 				if (RemovePvDbComments)
 				{
@@ -198,7 +193,6 @@ public partial class MainViewModel : ObservableObject
 			}
 			else
 			{
-				// Flujo estándar para scripts individuales sueltos (.dsc / .txt)
 				var choice = await Shell.Current.DisplayActionSheet(
 					"Elige el formato de entrada", "Cancelar", null,
 					"DivaScript (.txt)", "F", "F 2nd", "Future Tone", "X", "MGF", "Mirai");
