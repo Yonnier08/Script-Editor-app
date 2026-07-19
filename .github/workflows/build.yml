@@ -1,0 +1,48 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Instalar workload de MAUI/Android
+        run: dotnet workload install maui-android
+
+      - name: Restaurar dependencias
+        run: dotnet restore ScriptEditorMaui/ScriptEditorMaui.csproj
+
+      - name: Compilar APK (Release)
+        run: >
+          dotnet publish ScriptEditorMaui/ScriptEditorMaui.csproj
+          -f net8.0-android
+          -c Release
+          -p:AndroidPackageFormat=apk
+
+      - name: Localizar APK generado
+        id: find_apk
+        shell: bash
+        run: |
+          APK_PATH=$(find ScriptEditorMaui/bin/Release -name "*-Signed.apk" | head -n 1)
+          if [ -z "$APK_PATH" ]; then
+            APK_PATH=$(find ScriptEditorMaui/bin/Release -name "*.apk" | head -n 1)
+          fi
+          echo "apk_path=$APK_PATH" >> "$GITHUB_OUTPUT"
+
+      - name: Subir APK como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: ScriptEditor-apk
+          path: ${{ steps.find_apk.outputs.apk_path }}
