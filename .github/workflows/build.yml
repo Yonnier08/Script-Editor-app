@@ -73,7 +73,7 @@ jobs:
           echo "=== Verificacion ==="
           find DivaScript EditMode ScriptUtilities -name "*.cs" | wc -l
 
-      - name: Corregir ambiguedades de namespace en PvDatabaseInfo.cs
+      - name: Corregir ambiguedades y casts perdidos por decompiler.com
         shell: python
         run: |
           import re
@@ -141,21 +141,28 @@ jobs:
           with open(path, "w") as f:
               f.writelines(lines)
 
-          # Fix: Module siempre es la base (Performer.PvCostume no varia por juego)
           content = open(path).read()
           content = content.replace("EditMode.Diva2nd.Module", "EditMode.Module")
           content = content.replace("EditMode.DivaExtend.Module", "EditMode.Module")
           with open(path, "w") as f:
               f.write(content)
 
-          # Fix: decompiler.com perdio un cast (int) en el switch, rompiendo el tipo del switch
           for fname in ["ScriptUtilities/ScriptUtilities/Diva2ndEditScript.cs", "ScriptUtilities/ScriptUtilities/DivaExtendEditScript.cs"]:
               c = open(fname).read()
               c = c.replace("switch (val2 - 31)", "switch ((int)val2 - 31)")
               with open(fname, "w") as f:
                   f.write(c)
 
-          print("PvDatabaseInfo.cs y switches corregidos")
+          edittime_path = "ScriptUtilities/ScriptUtilities/EditTime.cs"
+          c = open(edittime_path).read()
+          c = c.replace(
+              "int num = sigChanges[0].Signature + 1;",
+              "int num = (int)sigChanges[0].Signature + 1;"
+          )
+          with open(edittime_path, "w") as f:
+              f.write(c)
+
+          print("Todos los fixes aplicados")
 
       - name: Setup .NET 8
         uses: actions/setup-dotnet@v4
