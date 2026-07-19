@@ -84,7 +84,7 @@ jobs:
               with open(path_pv, "r", encoding="utf-8") as f:
                   lines = f.readlines()
 
-              # 1. Resolver tokens estándar (Stage, Effect, etc.) por regiones
+              # 1. Resolver tokens estándar por regiones
               regions = [
                   (93, 108, "base"),
                   (111, 153, "Diva2nd"),
@@ -155,48 +155,78 @@ jobs:
                       if i < len(lines):
                           lines[i] = re.sub(r'\bEdit\b(?<!EditMode)', ns + ".Edit", lines[i])
 
-              # 4. SOLUCIÓN RADICAL PARA ASIGNACIONES COMPORTAMIENTO 'Module' (CS0266)
-              # Forzamos un cast mediante un formateador regex intermedio sobre lo ya procesado
+              # 4. SOLUCIÓN RADICAL PARA CRUCE DE ENUMS EN 'Module'
               for i in range(len(lines)):
-                  if "Module" in lines[i] and "=" in lines[i]:
-                      # Si asigna un valor a Module, metemos un doble cast numérico (EnumB)(int)(EnumA) seguro
-                      lines[i] = re.sub(r'=\s*EditMode\.Diva2nd\.Module\b', '= (EditMode.Module)(int)EditMode.Diva2nd.Module', lines[i])
-                      lines[i] = re.sub(r'=\s*EditMode\.DivaExtend\.Module\b', '= (EditMode.Module)(int)EditMode.DivaExtend.Module', lines[i])
-                      lines[i] = re.sub(r'=\s*EditMode\.Module\b', lambda m: '= (EditMode.Diva2nd.Module)(int)EditMode.Module' if 'Diva2nd' in lines[i] else '= (EditMode.DivaExtend.Module)(int)EditMode.Module', lines[i])
+                  if "Module =" in lines[i] or ".Module =" in lines[i]:
+                      # Capturamos dinámicamente todo lo asignado tras el símbolo '='
+                      parts = lines[i].split("=", 1)
+                      left, right = parts[0], parts[1].strip()
+                      # Identificar destino basándonos en el contexto de la línea
+                      if "Diva2nd" in left:
+                          target_type = "EditMode.Diva2nd.Module"
+                      elif "DivaExtend" in left:
+                          target_type = "EditMode.DivaExtend.Module"
+                      else:
+                          target_type = "EditMode.Module"
+                      
+                      # Quitar el terminador temporal para envolver el valor en un cast numérico intermedio seguro
+                      terminator = ";" if right.endswith(";") else ("," if right.endswith(",") else "")
+                      clean_right = right.rstrip(";, ")
+                      lines[i] = f"{left}= ({target_type})(int)({clean_right}){terminator}\n"
 
               with open(path_pv, "w", encoding="utf-8") as f:
                   f.writelines(lines)
               print("-> PvDatabaseInfo.cs corregido quirúrgicamente incluyendo tipos Module.")
 
-          # Convertir enteros / valores dinámicos a enums Opcode usando Regex sin importar delimitadores finales
+          # Captura voraz de asignación de Opcode (acepta cualquier método o variable del lado derecho)
           path_2nd = "ScriptUtilities/ScriptUtilities/Diva2ndEditScript.cs"
           if os.path.exists(path_2nd):
               with open(path_2nd, "r", encoding="utf-8") as f:
-                  content = f.read()
-              content = re.sub(r'\bOpcode\s*=\s*(\d+)', r'Opcode = (EditMode.Diva2nd.Opcode)\1', content)
+                  lines = f.readlines()
+              for i in range(len(lines)):
+                  if "Opcode =" in lines[i]:
+                      left, right = lines[i].split("=", 1)
+                      terminator = ";" if right.strip().endswith(";") else ("," if right.strip().endswith(",") else "")
+                      clean_right = right.strip().rstrip(";, ")
+                      lines[i] = f"{left}= (EditMode.Diva2nd.Opcode)({clean_right}){terminator}\n"
               with open(path_2nd, "w", encoding="utf-8") as f:
-                  f.write(content)
+                  f.writelines(lines)
               print("-> Diva2ndEditScript.cs corregido.")
 
           path_ext = "ScriptUtilities/ScriptUtilities/DivaExtendEditScript.cs"
           if os.path.exists(path_ext):
               with open(path_ext, "r", encoding="utf-8") as f:
-                  content = f.read()
-              content = re.sub(r'\bOpcode\s*=\s*(\d+)', r'Opcode = (EditMode.DivaExtend.Opcode)\1', content)
+                  lines = f.readlines()
+              for i in range(len(lines)):
+                  if "Opcode =" in lines[i]:
+                      left, right = lines[i].split("=", 1)
+                      terminator = ";" if right.strip().endswith(";") else ("," if right.strip().endswith(",") else "")
+                      clean_right = right.strip().rstrip(";, ")
+                      lines[i] = f"{left}= (EditMode.DivaExtend.Opcode)({clean_right}){terminator}\n"
               with open(path_ext, "w", encoding="utf-8") as f:
-                  f.write(content)
+                  f.writelines(lines)
               print("-> DivaExtendEditScript.cs corregido.")
 
-          # Solucionar asignación en EditTime.cs forzando conversión mutua limpia
+          # Corregir de manera absoluta EditTime.cs dividiendo asignaciones de TimeSig
           path_time = "ScriptUtilities/ScriptUtilities/EditTime.cs"
           if os.path.exists(path_time):
               with open(path_time, "r", encoding="utf-8") as f:
-                  content = f.read()
-              content = re.sub(r'=\s*EditMode\.TimeSig', '= (int)EditMode.TimeSig', content)
-              content = re.sub(r'=\s*TimeSig', '= (int)TimeSig', content)
-              content = re.sub(r'\bTimeSig\s*=\s*([^,;\s)]+)', r'TimeSig = (EditMode.TimeSig)(int)\1', content)
+                  lines = f.readlines()
+              for i in range(len(lines)):
+                  if "TimeSig =" in lines[i] or ".TimeSig =" in lines[i]:
+                      left, right = lines[i].split("=", 1)
+                      terminator = ";" if right.strip().endswith(";") else ("," if right.strip().endswith(",") else "")
+                      clean_right = right.strip().rstrip(";, ")
+                      # Forzar cast a enum
+                      lines[i] = f"{left}= (EditMode.TimeSig)(int)({clean_right}){terminator}\n"
+                  elif "TimeSig" in lines[i] and "=" in lines[i]:
+                      # Si TimeSig está a la derecha intentando asignarse a un entero
+                      left, right = lines[i].split("=", 1)
+                      terminator = ";" if right.strip().endswith(";") else ("," if right.strip().endswith(",") else "")
+                      clean_right = right.strip().rstrip(";, ")
+                      lines[i] = f"{left}= (int)({clean_right}){terminator}\n"
               with open(path_time, "w", encoding="utf-8") as f:
-                  f.write(content)
+                  f.writelines(lines)
               print("-> EditTime.cs corregido.")
 
       - name: Setup .NET 8
