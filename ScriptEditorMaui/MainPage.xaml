@@ -17,10 +17,10 @@
 
             <!-- MENÚS PRINCIPALES ESTILO PC -->
             <HorizontalStackLayout Grid.Row="0" Spacing="4" BackgroundColor="#2D2D2D" Padding="4">
-                <Button Text="File" Command="{Binding MenuFileCommand}" BackgroundColor="Transparent" TextColor="White" CompactSize="True" />
-                <Button Text="Edit" Command="{Binding MenuEditCommand}" BackgroundColor="Transparent" TextColor="White" CompactSize="True" />
-                <Button Text="Export" Command="{Binding MenuExportCommand}" BackgroundColor="Transparent" TextColor="White" CompactSize="True" />
-                <Button Text="Tools" Command="{Binding MenuToolsCommand}" BackgroundColor="Transparent" TextColor="White" CompactSize="True" />
+                <Button Text="File" Command="{Binding MenuFileCommand}" BackgroundColor="Transparent" TextColor="White" />
+                <Button Text="Edit" Command="{Binding MenuEditCommand}" BackgroundColor="Transparent" TextColor="White" />
+                <Button Text="Export" Command="{Binding MenuExportCommand}" BackgroundColor="Transparent" TextColor="White" />
+                <Button Text="Tools" Command="{Binding MenuToolsCommand}" BackgroundColor="Transparent" TextColor="White" />
                 <BoxView WidthRequest="1" BackgroundColor="Gray" Margin="5,0" />
                 <Label Text="{Binding StatusMessage}" VerticalOptions="Center" TextColor="LightGray" LineBreakMode="TailTruncation" FontSize="12" />[span_3](start_span)[span_3](end_span)
             </HorizontalStackLayout>
