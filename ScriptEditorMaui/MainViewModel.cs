@@ -39,7 +39,6 @@ public partial class MainViewModel : ObservableObject
 	[ObservableProperty]
 	private bool removePvDbComments;
 
-	// Controlamos de forma segura el parseo para evitar que rompa al iniciar vacía
 	private List<PvCommand> EditorCommands
 	{
 		get
@@ -75,14 +74,10 @@ public partial class MainViewModel : ObservableObject
 		}
 	}
 
-	// ==========================================
-	// LÓGICA DE MENÚS DESPLEGABLES INTERACTIVOS
-	// ==========================================
-
 	[RelayCommand]
 	private async Task MenuFile()
 	{
-		var choice = await Shell.Current.DisplayActionSheet("File", "Cancelar", null, "Open Script/DSC");
+		var choice = await Application.Current!.MainPage!.DisplayActionSheet("File", "Cancelar", null, "Open Script/DSC");
 		if (choice == "Open Script/DSC")
 		{
 			await OpenFileAsync(null);
@@ -92,7 +87,7 @@ public partial class MainViewModel : ObservableObject
 	[RelayCommand]
 	private async Task MenuEdit()
 	{
-		var choice = await Shell.Current.DisplayActionSheet(
+		var choice = await Application.Current!.MainPage!.DisplayActionSheet(
 			"Edit Options", 
 			"Cancelar", 
 			null, 
@@ -107,7 +102,7 @@ public partial class MainViewModel : ObservableObject
 
 		if (choice.StartsWith("Change PV ID"))
 		{
-			string result = await Shell.Current.DisplayPromptAsync("PV ID", "Introduce el número de PV (ej: 0 para pv_000, 999 para pv_999):", initialValue: PvId.ToString(), keyboard: Keyboard.Numeric);
+			string result = await Application.Current!.MainPage!.DisplayPromptAsync("PV ID", "Introduce el número de PV (ej: 0 para pv_000, 999 para pv_999):", initialValue: PvId.ToString(), keyboard: Keyboard.Numeric);
 			if (int.TryParse(result, out int newId))
 			{
 				PvId = newId;
@@ -122,7 +117,7 @@ public partial class MainViewModel : ObservableObject
 	[RelayCommand]
 	private async Task MenuExport()
 	{
-		var choice = await Shell.Current.DisplayActionSheet(
+		var choice = await Application.Current!.MainPage!.DisplayActionSheet(
 			"Export Script", 
 			"Cancelar", 
 			null, 
@@ -157,7 +152,7 @@ public partial class MainViewModel : ObservableObject
 	[RelayCommand]
 	private async Task MenuTools()
 	{
-		var choice = await Shell.Current.DisplayActionSheet(
+		var choice = await Application.Current!.MainPage!.DisplayActionSheet(
 			"Tools", 
 			"Cancelar", 
 			null, 
@@ -171,13 +166,9 @@ public partial class MainViewModel : ObservableObject
 		else if (choice == "Toggle Remove PVDb Comments")
 		{
 			RemovePvDbComments = !RemovePvDbComments;
-			await Shell.Current.DisplayAlert("Tools", $"Remove PVDb Comments ahora está: {(RemovePvDbComments ? "ACTIVADO" : "DESACTIVADO")}", "OK");
+			await Application.Current!.MainPage!.DisplayAlert("Tools", $"Remove PVDb Comments ahora está: {(RemovePvDbComments ? "ACTIVADO" : "DESACTIVADO")}", "OK");
 		}
 	}
-
-	// ==========================================
-	// PROCESAMIENTO DE ARCHIVOS
-	// ==========================================
 
 	private async Task OpenFileAsync(string? editMode)
 	{
@@ -215,7 +206,7 @@ public partial class MainViewModel : ObservableObject
 			}
 			else
 			{
-				var choice = await Shell.Current.DisplayActionSheet(
+				var choice = await Application.Current!.MainPage!.DisplayActionSheet(
 					"Elige el formato de entrada", "Cancelar", null,
 					"DivaScript (.txt)", "F", "F 2nd", "Future Tone", "X", "MGF", "Mirai");
 
@@ -252,7 +243,7 @@ public partial class MainViewModel : ObservableObject
 			var commands = EditorCommands;
 			if (commands is null || commands.Count == 0)
 			{
-				await Shell.Current.DisplayAlert("Exportar", "No hay comandos en el script actual para exportar.", "OK");
+				await Application.Current!.MainPage!.DisplayAlert("Exportar", "No hay comandos en el script actual para exportar.", "OK");
 				return;
 			}
 
@@ -299,10 +290,6 @@ public partial class MainViewModel : ObservableObject
 		return parts.Length > 1 ? Path.GetFileName(parts[1].Trim()) : null;
 	}
 
-	// ==========================================
-	// ACCIONES DEL PANEL INFERIOR
-	// ==========================================
-
 	[RelayCommand]
 	private void AddTargetFlyingTimeCommands()
 	{
@@ -336,7 +323,7 @@ public partial class MainViewModel : ObservableObject
 	{
 		if (string.IsNullOrWhiteSpace(EditorText)) return;
 
-		bool confirm = await Shell.Current.DisplayAlert("Advertencia", "Vas a eliminar todos los comandos del chart.\n¿Continuar?", "Sí", "No");
+		bool confirm = await Application.Current!.MainPage!.DisplayAlert("Advertencia", "Vas a eliminar todos los comandos del chart.\n¿Continuar?", "Sí", "No");
 		if (!confirm) return;
 
 		string[] chartOpcodes = { "TARGET", "TARGET_FLYING_TIME", "BAR_TIME_SET", "MUSIC_PLAY" };
