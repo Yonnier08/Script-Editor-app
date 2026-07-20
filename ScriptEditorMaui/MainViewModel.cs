@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
+using System.Text;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Maui.Storage;
@@ -191,14 +193,19 @@ public partial class MainViewModel : ObservableObject
 				List<PvCommand> commands;
 				PvDatabaseInfo pvDatabase;
 
+				// Forzamos el proveedor Shift-JIS (Code Page 932) para evitar textos corruptos
+				var shiftJis = Encoding.GetEncoding(932);
+
 				if (editMode.Contains("DIVA Extend"))
 				{
-					var edit = new EditMode.DivaExtend.Edit(paths[0]);
+					// Se le inyecta el encoding al constructor para que el binario se lea correctamente
+					var edit = new EditMode.DivaExtend.Edit(paths[0], shiftJis);
 					(commands, pvDatabase) = DivaExtendEditScript.GetFtEditCommands(edit, PvId);
 				}
 				else
 				{
-					var edit = new EditMode.Diva2nd.Edit(paths[0]);
+					// Se le inyecta el encoding al constructor para que el binario se lea correctamente
+					var edit = new EditMode.Diva2nd.Edit(paths[0], shiftJis);
 					(commands, pvDatabase) = Diva2ndEditScript.GetFtEditCommands(edit, PvId);
 				}
 
