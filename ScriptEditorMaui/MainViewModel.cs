@@ -247,6 +247,7 @@ public partial class MainViewModel : ObservableObject
 		catch (Exception ex)
 		{
 			StatusMessage = $"Error al cargar: {ex.Message}";
+			await Application.Current!.MainPage!.DisplayAlert("Error al cargar", $"{ex.GetType().Name}: {ex.Message}\n\n{ex.StackTrace}", "OK");
 		}
 	}
 
