@@ -187,20 +187,34 @@ public partial class MainViewModel : ObservableObject
 			if (editMode != null)
 			{
 				StatusMessage = $"Procesando Edit: {Path.GetFileName(paths[0])}...";
-				
-				EditorCommands = PvScript.ParseBinaryScripts(_filePaths, Format.F2, IsBigEndian);
-				
-				string pvText = $"# Datos generados para pv_{PvId:D3}\n# Modo: {editMode}\n# [Bases de datos cargadas con éxito]";
-				string fieldText = $"# Datos de escenario generados para pv_{PvId:D3}\n# [Campos cargados con éxito]";
+
+				List<PvCommand> commands;
+				PvDatabaseInfo pvDatabase;
+
+				if (editMode.Contains("DIVA Extend"))
+				{
+					var edit = new EditMode.DivaExtend.Edit(paths[0]);
+					(commands, pvDatabase) = DivaExtendEditScript.GetFtEditCommands(edit, PvId);
+				}
+				else
+				{
+					var edit = new EditMode.Diva2nd.Edit(paths[0]);
+					(commands, pvDatabase) = Diva2ndEditScript.GetFtEditCommands(edit, PvId);
+				}
+
+				EditorCommands = commands;
+
+				var pvDbLines = pvDatabase.GetFtPvDb();
+				var fieldDbLines = pvDatabase.GetFtFieldDb();
 
 				if (RemovePvDbComments)
 				{
-					pvText = string.Join(Environment.NewLine, pvText.Split('\n').Where(l => !l.Trim().StartsWith("#")));
-					fieldText = string.Join(Environment.NewLine, fieldText.Split('\n').Where(l => !l.Trim().StartsWith("#")));
+					pvDbLines = pvDbLines.Where(l => !l.TrimStart().StartsWith("#")).ToList();
+					fieldDbLines = fieldDbLines.Where(l => !l.TrimStart().StartsWith("#")).ToList();
 				}
 
-				PvDbText = pvText;
-				FieldDbText = fieldText;
+				PvDbText = string.Join(Environment.NewLine, pvDbLines);
+				FieldDbText = string.Join(Environment.NewLine, fieldDbLines);
 
 				StatusMessage = $"Edit cargado con éxito para pv_{PvId:D3}";
 			}
