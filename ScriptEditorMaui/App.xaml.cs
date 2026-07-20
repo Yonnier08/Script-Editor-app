@@ -42,6 +42,6 @@ public partial class App : Application
 			// Fallback si falla la carga física inicial
 		}
 
-		MainPage = new AppShell();
+		MainPage = new ScriptEditorMaui.MainPage();
 	}
 }
