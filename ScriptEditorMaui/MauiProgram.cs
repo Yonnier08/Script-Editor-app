@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using CommunityToolkit.Maui;
+using System.Text; // Asegúrate de tener esta directiva para codificación
 
 namespace ScriptEditorMaui;
 
@@ -7,6 +8,9 @@ public static class MauiProgram
 {
 	public static MauiApp CreateMauiApp()
 	{
+		// REGISTRO DE CODE PAGES PARA SOPORTAR SHIFT-JIS (JAPONÉS 932)
+		Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+
 		var builder = MauiApp.CreateBuilder();
 		builder
 			.UseMauiApp<App>()
@@ -16,7 +20,7 @@ public static class MauiProgram
 				fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
 			});
 
-		// REGISTRO DE VISTAS Y VIEWMODELS (Añade estas dos líneas)
+		// Registro de vistas y ViewModels obligatorios
 		builder.Services.AddSingleton<MainPage>();
 		builder.Services.AddSingleton<MainViewModel>();
 
