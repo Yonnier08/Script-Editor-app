@@ -1,7 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using System.IO;
-using System.Text;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Maui.Storage;
@@ -181,10 +179,21 @@ public partial class MainViewModel : ObservableObject
 				PickerTitle = editMode ?? "Selecciona archivo(s) DSC o DivaScript"
 			});
 
-			var paths = results?.Select(r => r.FullPath).ToArray();
-			if (paths is null || paths.Length == 0) return;
+			if (results is null || !results.Any()) return;
 
-			_filePaths = paths;
+			var paths = new List<string>();
+			foreach (var file in results)
+			{
+				string localPath = Path.Combine(FileSystem.CacheDirectory, file.FileName);
+				using (var sourceStream = await file.OpenReadAsync())
+				using (var localStream = File.Create(localPath))
+				{
+					await sourceStream.CopyToAsync(localStream);
+				}
+				paths.Add(localPath);
+			}
+
+			_filePaths = paths.ToArray();
 
 			if (editMode != null)
 			{
@@ -193,19 +202,14 @@ public partial class MainViewModel : ObservableObject
 				List<PvCommand> commands;
 				PvDatabaseInfo pvDatabase;
 
-				// Forzamos el proveedor Shift-JIS (Code Page 932) para evitar textos corruptos
-				var shiftJis = Encoding.GetEncoding(932);
-
 				if (editMode.Contains("DIVA Extend"))
 				{
-					// Se le inyecta el encoding al constructor para que el binario se lea correctamente
-					var edit = new EditMode.DivaExtend.Edit(paths[0], shiftJis);
+					var edit = new EditMode.DivaExtend.Edit(paths[0]);
 					(commands, pvDatabase) = DivaExtendEditScript.GetFtEditCommands(edit, PvId);
 				}
 				else
 				{
-					// Se le inyecta el encoding al constructor para que el binario se lea correctamente
-					var edit = new EditMode.Diva2nd.Edit(paths[0], shiftJis);
+					var edit = new EditMode.Diva2nd.Edit(paths[0]);
 					(commands, pvDatabase) = Diva2ndEditScript.GetFtEditCommands(edit, PvId);
 				}
 
